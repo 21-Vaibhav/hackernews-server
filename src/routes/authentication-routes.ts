@@ -14,35 +14,20 @@ authenticationRoutes.post("/sign-up", async (context) => {
   const { username, password } = await context.req.json();
 
   try {
-    const result = await signUpWithUsernameAndPassword({
-      username,
-      password,
-    });
+    const result = await signUpWithUsernameAndPassword({ username, password });
 
-    return context.json(
-      {
-        data: result,
-      },
-      201
-    );
+    return context.json({ data: result }, 201);
   } catch (e) {
+    console.error("❌ Sign-up error:", e); // Log the actual error
+
     if (e === signUpWithUsernameAndPasswordError.CONFLICTING_USERNAME) {
-      return context.json(
-        {
-          message: "Username already exists",
-        },
-        409
-      );
+      return context.json({ message: "Username already exists" }, 409);
     }
 
-    return context.json(
-      {
-        mesage: "Unknown",
-      },
-      500
-    );
+    return context.json({ message: `Unknown: ${e}` }, 500); // Include error in response
   }
 });
+
 
 authenticationRoutes.post("/log-in", async (context) => {
   try {

@@ -89,7 +89,7 @@ hackernews-server/
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/hackernews-server.git
+   git clone https://github.com/21-Vaibhav/hackernews-server.git
    cd hackernews-server
    ```
 

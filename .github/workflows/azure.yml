@@ -3,14 +3,14 @@ name: Deploy to Azure Container Apps
 on:
   push:
     branches:
-      - main  # Change this to your deployment branch if needed
+      - master  # Change this to your deployment branch if needed
   workflow_dispatch:
 
 env:
-  CONTAINER_NAME: hackernews
+  CONTAINER_NAME: hacker-env
   RESOURCE_GROUP: HackerNews
   ACR_NAME: hackernews1si21is057.azurecr.io
-  ACA_NAME: hackernews
+  ACA_NAME: hacker-env
   REGION: centralindia
 
 permissions:

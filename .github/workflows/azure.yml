@@ -1,0 +1,70 @@
+name: Deploy to Azure Container Apps
+
+on:
+  push:
+    branches:
+      - main  # Change this to your deployment branch if needed
+  workflow_dispatch:
+
+env:
+  CONTAINER_NAME: hackernews
+  RESOURCE_GROUP: HackerNews
+  ACR_NAME: hackernews1si21is057.azurecr.io
+  ACA_NAME: hackernews
+  REGION: centralindia
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to ACR
+        run: |
+          az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build and Tag Docker Image
+        run: |
+          docker build -t ${{ env.ACR_NAME }}/${{ env.CONTAINER_NAME }}:latest .
+
+      - name: Push Docker Image to ACR
+        run: |
+          docker push ${{ env.ACR_NAME }}/${{ env.CONTAINER_NAME }}:latest
+
+  deploy:
+    name: Deploy to Azure Container Apps
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name ${{ env.ACA_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.ACR_NAME }}/${{ env.CONTAINER_NAME }}:latest \
+            --set-env-vars DATABASE_URL=${{ secrets.DATABASE_URL }} \
+                           DIRECT_URL=${{ secrets.DIRECT_URL }} \
+                           JWT_SECRET=${{ secrets.JWT_SECRET }}

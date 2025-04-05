@@ -1,87 +1,76 @@
-name: Deploy to Azure Container Apps
+name: Build and Deploy to Azure Container Apps
 
 on:
   push:
-    branches:
-      - master  # Change this to your deployment branch if needed
-  workflow_dispatch:
+    tags:
+      - "*"
 
 env:
-  CONTAINER_NAME: hacker-env  # Ensure this matches the ACR repository name
+  AZURE_REGION: centralindia
   RESOURCE_GROUP: HackerNews
-  ACR_NAME: hackernews1si21is057
-  ACA_NAME: hacker-env
-  REGION: centralindia
-
-permissions:
-  contents: read
-  id-token: write
+  CONTAINER_APPS_ENVIRONMENT: hackernews
+  LOG_ANALYTICS_WORKSPACE: hackernews-log
+  ACR_REGISTRY: hackernews.azurecr.io
+  ACR_REPOSITORY_NAME: hackernews
+  CONTAINER_APP_NAME: hackernews
+  TARGET_PORT: 3000
 
 jobs:
-  build-and-push:
-    name: Build and Push Docker Image
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract Azure Secrets
-        run: |
-          echo '${{ secrets.AZURE_GITHUB_ACTIONS }}' > azure_secrets.json
-          echo "AZURE_CLIENT_ID=$(jq -r .clientId azure_secrets.json)" >> $GITHUB_ENV
-          echo "AZURE_TENANT_ID=$(jq -r .tenantId azure_secrets.json)" >> $GITHUB_ENV
-          echo "AZURE_SUBSCRIPTION_ID=$(jq -r .subscriptionId azure_secrets.json)" >> $GITHUB_ENV
-          echo "AZURE_CLIENT_SECRET=$(jq -r .clientSecret azure_secrets.json)" >> $GITHUB_ENV
-
-      - name: Log in to Azure
-        uses: azure/login@v1
+      - name: Azure Login
+        uses: azure/login@v2
         with:
-          client-id: ${{ env.AZURE_CLIENT_ID }}
-          tenant-id: ${{ env.AZURE_TENANT_ID }}
-          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          creds: ${{ secrets.AZURE_GITHUB_ACTIONS }}
 
-      - name: Log in to Azure Container Registry (ACR)
+      - name: Ensure Azure Container Registry (ACR)
         run: |
-          az acr login --name ${{ env.ACR_NAME }}
+          REGISTRY_NAME=$(echo "${{ env.ACR_REGISTRY }}" | cut -d'.' -f1)
+          ACR_EXISTS=$(az acr show --name "$REGISTRY_NAME" --resource-group "${{ env.RESOURCE_GROUP }}" --query name --output tsv 2>/dev/null || echo "")
+          if [ -z "$ACR_EXISTS" ]; then
+            az acr create --name "$REGISTRY_NAME" --resource-group "${{ env.RESOURCE_GROUP }}" --sku Standard --admin-enabled true
+          fi
+          ACR_USERNAME=$(az acr credential show --name "$REGISTRY_NAME" --query username -o tsv)
+          ACR_PASSWORD=$(az acr credential show --name "$REGISTRY_NAME" --query passwords[0].value -o tsv)
+          echo "::add-mask::$ACR_USERNAME"
+          echo "::add-mask::$ACR_PASSWORD"
+          echo "ACR_USERNAME=$ACR_USERNAME" >> $GITHUB_ENV
+          echo "ACR_PASSWORD=$ACR_PASSWORD" >> $GITHUB_ENV
 
-      - name: Build and Tag Docker Image
-        run: |
-          docker build -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.CONTAINER_NAME }}:latest .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Push Docker Image to ACR
-        run: |
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.CONTAINER_NAME }}:latest
-
-  deploy:
-    name: Deploy to Azure Container Apps
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Extract Azure Secrets
-        run: |
-          echo '${{ secrets.AZURE_GITHUB_ACTIONS }}' > azure_secrets.json
-          echo "AZURE_CLIENT_ID=$(jq -r .clientId azure_secrets.json)" >> $GITHUB_ENV
-          echo "AZURE_TENANT_ID=$(jq -r .tenantId azure_secrets.json)" >> $GITHUB_ENV
-          echo "AZURE_SUBSCRIPTION_ID=$(jq -r .subscriptionId azure_secrets.json)" >> $GITHUB_ENV
-          echo "AZURE_CLIENT_SECRET=$(jq -r .clientSecret azure_secrets.json)" >> $GITHUB_ENV
-
-      - name: Log in to Azure
-        uses: azure/login@v1
+      - name: Login to ACR
+        uses: docker/login-action@v3
         with:
-          client-id: ${{ env.AZURE_CLIENT_ID }}
-          tenant-id: ${{ env.AZURE_TENANT_ID }}
-          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          registry: ${{ env.ACR_REGISTRY }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
 
-      - name: Deploy to Azure Container Apps
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6.15.0
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.ACR_REGISTRY }}/${{ env.ACR_REPOSITORY_NAME }}:${{ github.ref_name }}
+
+      - name: Deploy Container App
         run: |
-          az containerapp update \
-            --name ${{ env.ACA_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.ACR_NAME }}.azurecr.io/${{ env.CONTAINER_NAME }}:latest \
-            --set-env-vars DATABASE_URL=${{ secrets.DATABASE_URL }} \
-                           DIRECT_URL=${{ secrets.DIRECT_URL }} \
-                           JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            --output none
+          az containerapp up \
+            --name "${{ env.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --environment "${{ env.CONTAINER_APPS_ENVIRONMENT }}" \
+            --ingress external \
+            --target-port "${{ env.TARGET_PORT }}" \
+            --location "${{ env.AZURE_REGION }}" \
+            --image "${{ env.ACR_REGISTRY }}/${{ env.ACR_REPOSITORY_NAME }}:${{ github.ref_name }}" \
+            --registry-server "${{ env.ACR_REGISTRY }}" \
+            --registry-username "${{ env.ACR_USERNAME }}" \
+            --registry-password "${{ env.ACR_PASSWORD }}" \
+            --env-vars DATABASE_URL=${{ secrets.DATABASE_URL }} JWT_SECRET=${{ secrets.JWT_SECRET }} DIRECT_URL=${{ secrets.DIRECT_URL }}

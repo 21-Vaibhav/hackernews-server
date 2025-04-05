@@ -25,12 +25,20 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Extract Azure Secrets
+        run: |
+          echo '${{ secrets.AZURE_GITHUB_ACTIONS }}' > azure_secrets.json
+          echo "AZURE_CLIENT_ID=$(jq -r .clientId azure_secrets.json)" >> $GITHUB_ENV
+          echo "AZURE_TENANT_ID=$(jq -r .tenantId azure_secrets.json)" >> $GITHUB_ENV
+          echo "AZURE_SUBSCRIPTION_ID=$(jq -r .subscriptionId azure_secrets.json)" >> $GITHUB_ENV
+          echo "AZURE_CLIENT_SECRET=$(jq -r .clientSecret azure_secrets.json)" >> $GITHUB_ENV
+
       - name: Log in to Azure
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
       - name: Log in to Azure Container Registry (ACR)
         run: |
@@ -52,12 +60,20 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Extract Azure Secrets
+        run: |
+          echo '${{ secrets.AZURE_GITHUB_ACTIONS }}' > azure_secrets.json
+          echo "AZURE_CLIENT_ID=$(jq -r .clientId azure_secrets.json)" >> $GITHUB_ENV
+          echo "AZURE_TENANT_ID=$(jq -r .tenantId azure_secrets.json)" >> $GITHUB_ENV
+          echo "AZURE_SUBSCRIPTION_ID=$(jq -r .subscriptionId azure_secrets.json)" >> $GITHUB_ENV
+          echo "AZURE_CLIENT_SECRET=$(jq -r .clientSecret azure_secrets.json)" >> $GITHUB_ENV
+
       - name: Log in to Azure
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Container Apps
         run: |
@@ -69,5 +85,3 @@ jobs:
                            DIRECT_URL=${{ secrets.DIRECT_URL }} \
                            JWT_SECRET=${{ secrets.JWT_SECRET }} \
             --output none
-
-

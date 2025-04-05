@@ -2,8 +2,9 @@ name: Build and Deploy to Azure Container Apps
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - master  # Trigger on master branch
+  workflow_dispatch:  # Allows manual trigger
 
 env:
   AZURE_REGION: centralindia
@@ -58,7 +59,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ env.ACR_REGISTRY }}/${{ env.ACR_REPOSITORY_NAME }}:${{ github.ref_name }}
+          tags: ${{ env.ACR_REGISTRY }}/${{ env.ACR_REPOSITORY_NAME }}:${{ github.sha }}
 
       - name: Deploy Container App
         run: |
@@ -69,9 +70,8 @@ jobs:
             --ingress external \
             --target-port "${{ env.TARGET_PORT }}" \
             --location "${{ env.AZURE_REGION }}" \
-            --image "${{ env.ACR_REGISTRY }}/${{ env.ACR_REPOSITORY_NAME }}:${{ github.ref_name }}" \
+            --image "${{ env.ACR_REGISTRY }}/${{ env.ACR_REPOSITORY_NAME }}:${{ github.sha }}" \
             --registry-server "${{ env.ACR_REGISTRY }}" \
             --registry-username "${{ env.ACR_USERNAME }}" \
             --registry-password "${{ env.ACR_PASSWORD }}" \
             --env-vars DATABASE_URL=${{ secrets.DATABASE_URL }} JWT_SECRET=${{ secrets.JWT_SECRET }} DIRECT_URL=${{ secrets.DIRECT_URL }}
-

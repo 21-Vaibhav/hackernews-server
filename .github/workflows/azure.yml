@@ -69,3 +69,5 @@ jobs:
                            DIRECT_URL=${{ secrets.DIRECT_URL }} \
                            JWT_SECRET=${{ secrets.JWT_SECRET }} \
             --output none
+
+

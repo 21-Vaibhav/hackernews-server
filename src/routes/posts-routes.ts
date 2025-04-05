@@ -1,15 +1,15 @@
 import { Hono } from "hono";
-import { tokenMiddleware } from "./middlewares.ts/token-middleware";
+import { tokenMiddleware } from "./middlewares.ts/token-middleware.js";
 import {
   createPost,
   getAllPosts,
   getUserPosts,
   deletePost,
-} from "../controllers/posts/posts-controller";
+} from "../controllers/posts/posts-controller.js";
 import {
   CreatePostError,
   DeletePostError,
-} from "../controllers/posts/posts-types";
+} from "../controllers/posts/posts-types.js";
 
 export const postsRoutes = new Hono();
 

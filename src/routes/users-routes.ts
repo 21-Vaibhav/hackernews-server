@@ -1,8 +1,8 @@
 import { Hono } from "hono";
-import { prismaClient } from "../extras/prisma";
-import { tokenMiddleware } from "../routes/middlewares.ts/token-middleware";
-import { getAllUsers, getMe } from "../controllers/users/users-controller";
-import { GetMeError } from "../controllers/users/users-types";
+import { prismaClient } from "../extras/prisma.js";
+import { tokenMiddleware } from "../routes/middlewares.ts/token-middleware.js";
+import { getAllUsers, getMe } from "../controllers/users/users-controller.js";
+import { GetMeError } from "../controllers/users/users-types.js";
 
 export const usersRoutes = new Hono();
 

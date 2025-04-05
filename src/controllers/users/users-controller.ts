@@ -1,9 +1,9 @@
-import { prismaClient } from "../../extras/prisma";
+import { prismaClient } from "../../extras/prisma.js";
 import {
   GetMeError,
   type GetAllUsersResult,
   type GetMeResult,
-} from "./users-types";
+} from "./users-types.js";
 
 export const getMe = async (parameters: {
   userId: string;

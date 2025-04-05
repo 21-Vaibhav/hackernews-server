@@ -1,10 +1,10 @@
-import { prismaClient } from "../../extras/prisma";
+import { prismaClient } from "../../extras/prisma.js";
 import {
   type CreateCommentResult,
   type GetCommentsResult,
   CreateCommentError,
   CommentOperationError,
-} from "./comments-types";
+} from "./comments-types.js";
 
 export const createComment = async (parameters: {
   userId: string;

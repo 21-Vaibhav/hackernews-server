@@ -1,10 +1,10 @@
-import { prismaClient } from "../../extras/prisma";
+import { prismaClient } from "../../extras/prisma.js";
 import {
  type CreatePostResult,
  type GetPostsResult,
   CreatePostError,
   DeletePostError,
-} from "./posts-types";
+} from "./posts-types.js";
 
 export const createPost = async (parameters: {
   userId: string;

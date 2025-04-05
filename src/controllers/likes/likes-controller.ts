@@ -1,10 +1,10 @@
-import { prismaClient } from "../../extras/prisma";
+import { prismaClient } from "../../extras/prisma.js";
 import {
   type CreateLikeResult,
   type GetLikesResult,
   CreateLikeError,
   LikeOperationError,
-} from "./likes-types";
+} from "./likes-types.js";
 
 export const createLike = async (parameters: {
   userId: string;

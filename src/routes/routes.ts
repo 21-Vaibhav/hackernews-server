@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { authenticationRoutes } from "./authentication-routes";
-import { usersRoutes } from "./users-routes";
-import { postsRoutes } from "./posts-routes";
-import { commentsRoutes } from "./comments-routes";
-import { likesRoutes } from "./likes-routes";
+import { authenticationRoutes } from "./authentication-routes.js";
+import { usersRoutes } from "./users-routes.js";
+import { postsRoutes } from "./posts-routes.js";
+import { commentsRoutes } from "./comments-routes.js";
+import { likesRoutes } from "./likes-routes.js";
 import { logger } from "hono/logger";
 import { swaggerUI } from "@hono/swagger-ui";
 

@@ -74,3 +74,4 @@ jobs:
             --registry-username "${{ env.ACR_USERNAME }}" \
             --registry-password "${{ env.ACR_PASSWORD }}" \
             --env-vars DATABASE_URL=${{ secrets.DATABASE_URL }} JWT_SECRET=${{ secrets.JWT_SECRET }} DIRECT_URL=${{ secrets.DIRECT_URL }}
+

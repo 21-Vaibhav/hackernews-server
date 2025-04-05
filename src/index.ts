@@ -2,7 +2,7 @@ import "dotenv/config";
 import { allRoutes } from "./routes/routes";
 import { serve } from "@hono/node-server";
 
-const PORT = Number(process.env.PORT) || 3000; // Match Dockerfile
+const PORT = 3000; // Force port to 3000 to match Azure ingress
 
 try {
   serve({
